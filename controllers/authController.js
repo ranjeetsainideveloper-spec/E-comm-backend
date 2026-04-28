@@ -2,6 +2,8 @@ const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const asyncHandler = require('express-async-handler');
 const { normalizeWallet, syncWalletBalance } = require('../utils/wallet');
+const crypto = require('crypto');
+const User = require('../models/User');
 
 exports.register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
@@ -98,4 +100,54 @@ exports.updateProfile = asyncHandler(async (req, res) => {
 
 exports.logout = asyncHandler(async (req, res) => {
   res.json({ message: 'Logout success - delete token on client' });
+});
+
+// POST /api/auth/forgot-password
+exports.forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    res.status(400);
+    throw new Error('Email required');
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    // respond success to avoid user enumeration
+    return res.json({ message: 'If an account exists, a reset link will be sent (see server console for demo).' });
+  }
+
+  const token = crypto.randomBytes(20).toString('hex');
+  const expires = Date.now() + 1000 * 60 * 60; // 1 hour
+
+  user.resetPasswordToken = token;
+  user.resetPasswordExpires = expires;
+  await user.save();
+
+  const resetLink = `${process.env.ADMIN_URL || 'http://localhost:5174'}/reset-password?token=${token}`;
+  // For demo: print reset link to server console (or send via email in production)
+  console.log('Password reset link (demo):', resetLink);
+
+  res.json({ message: 'If an account exists, a reset link will be sent (see server console for demo).' });
+});
+
+// POST /api/auth/reset-password
+exports.resetPassword = asyncHandler(async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) {
+    res.status(400);
+    throw new Error('token and password required');
+  }
+
+  const user = await User.findOne({ resetPasswordToken: token, resetPasswordExpires: { $gt: Date.now() } });
+  if (!user) {
+    res.status(400);
+    throw new Error('Invalid or expired token');
+  }
+
+  user.password = password;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpires = undefined;
+  await user.save();
+
+  res.json({ message: 'Password reset successful' });
 });

@@ -42,6 +42,22 @@ const userSchema = new mongoose.Schema(
         country: { type: String, default: 'India' }
       }
     ]
+    ,
+    // In-app notifications for user (e.g., order status updates)
+    notifications: [
+      {
+        type: { type: String, default: 'order' },
+        title: { type: String, default: '' },
+        message: { type: String, default: '' },
+        meta: { type: mongoose.Schema.Types.Mixed, default: {} },
+        read: { type: Boolean, default: false },
+        createdAt: { type: Date, default: Date.now }
+      }
+    ],
+    ,
+    // Password reset token (for forgot/reset password flow)
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date }
   },
   { timestamps: true }
 );

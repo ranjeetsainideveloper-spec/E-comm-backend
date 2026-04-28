@@ -6,7 +6,7 @@ const { getDeliveryCharge } = require('../utils/storeSettings');
 const User = require('../models/User');
 const { syncWalletBalance, debitWallet, creditWallet } = require('../utils/wallet');
 
-const VALID_ORDER_STATUSES = ['PLACED', 'CONFIRMED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'RETURN_REQUESTED', 'RETURNED'];
+const VALID_ORDER_STATUSES = ['PLACED', 'PACKED', 'CONFIRMED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'RETURN_REQUESTED', 'RETURNED'];
 const VALID_PAYMENT_STATUSES = ['PENDING', 'PAID', 'FAILED'];
 const VALID_SUPPORT_TYPES = ['RETURN', 'REPLACE', 'OTHER'];
 const SUPPORT_WINDOW_DAYS = 3;
@@ -188,7 +188,39 @@ exports.updateOrderStatus = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error('Invalid order status');
     }
+    const previousStatus = order.orderStatus;
     order.orderStatus = req.body.orderStatus;
+
+    // Notify customer when order is packed or delivered
+    if (previousStatus !== order.orderStatus) {
+      try {
+        const user = await User.findById(order.user);
+        if (user) {
+          const title = order.orderStatus === 'PACKED' ? 'Your order is packed' :
+                        order.orderStatus === 'DELIVERED' ? 'Your order has been delivered' : '';
+          if (title) {
+            const message = order.orderStatus === 'PACKED'
+              ? `Good news! Your order ${order._id} is packed and will be shipped soon.`
+              : `Your order ${order._id} has been delivered. We hope you enjoy your purchase!`;
+
+            user.notifications = user.notifications || [];
+            user.notifications.push({
+              type: 'order',
+              title,
+              message,
+              meta: { orderId: order._id, status: order.orderStatus },
+              read: false
+            });
+            await user.save();
+
+            // Also log to console (can be replaced with email/SMS later)
+            console.log(`Notify ${user.email}: ${title} - ${message}`);
+          }
+        }
+      } catch (notifyErr) {
+        console.error('Failed to notify user about order status change:', notifyErr);
+      }
+    }
   }
 
   if (req.body.paymentStatus) {

@@ -56,7 +56,7 @@ const orderSchema = new mongoose.Schema(
     },
     orderStatus: {
       type: String,
-      enum: ['PLACED', 'CONFIRMED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'RETURN_REQUESTED', 'RETURNED'],
+      enum: ['PLACED', 'PACKED', 'CONFIRMED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'RETURN_REQUESTED', 'RETURNED'],
       default: 'PLACED'
     },
     returnRequest: {
@@ -78,6 +78,9 @@ const orderSchema = new mongoose.Schema(
     transaction: { type: mongoose.Schema.Types.ObjectId, ref: 'Transaction', default: null },
     paidAt: Date,
     deliveredAt: Date
+    ,
+    // Whether the customer has submitted a rating for this order
+    rated: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
