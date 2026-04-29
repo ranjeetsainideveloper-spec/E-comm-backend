@@ -8,6 +8,19 @@ const ensureDefaultAdmin = require('./utils/ensureDefaultAdmin');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 dotenv.config();
+
+console.log('DATABASE_URL exists?', process.env.DATABASE_URL ? 'Yes' : 'No');
+console.log('JWT_SECRET exists?', process.env.JWT_SECRET ? 'Yes' : 'No');
+
+if (!process.env.DATABASE_URL) {
+  console.error('FATAL ERROR: DATABASE_URL is not defined in environment variables');
+  process.exit(1);
+}
+
+if (!process.env.MONGO_URI) {
+  process.env.MONGO_URI = process.env.DATABASE_URL;
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
