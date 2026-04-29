@@ -41,8 +41,7 @@ const userSchema = new mongoose.Schema(
         postalCode: String,
         country: { type: String, default: 'India' }
       }
-    ]
-    ,
+    ],
     // In-app notifications for user (e.g., order status updates)
     notifications: [
       {
@@ -54,7 +53,6 @@ const userSchema = new mongoose.Schema(
         createdAt: { type: Date, default: Date.now }
       }
     ],
-    ,
     // Password reset token (for forgot/reset password flow)
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date }
